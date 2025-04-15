@@ -17,8 +17,9 @@ def send_result_via_socket(result):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.connect((HOST, PORT))
+            # 一定要utf-8编码，因为只接受字节传输
             s.sendall(result.encode('utf-8'))
-            print(f"Sent result: {result}")
+            # print(f"{result}")
         except Exception as e:
             print(f"Socket error: {e}")
 
@@ -40,25 +41,24 @@ def main():
             continue
 
         # 使用 bestW.pt 模型进行预测
-        results = model(task='dectet',mode='predict',source=img)
+        results = model(task='detect',mode='predict',source=img)
 
         # 解析结果
+        # 0是红灯，1是绿灯
         detections = []
         for box in results[0].boxes:
             cls_id = int(box.cls.item())
             conf = float(box.conf.item())
-            bbox = box.xyxy.tolist()[0]  # 边界框坐标 [x1, y1, x2, y2]
             detections.append({
                 "class": cls_id,
                 "confidence": conf,
-                "bbox": bbox
             })
 
         # 构造识别结果字符串
-        result_str = f"Image: {os.path.basename(img_path)}, Detections: {detections}"
+        result_string = f"Detections: {detections}"
 
         # 发送结果
-        send_result_via_socket(result_str)
+        send_result_via_socket(result_string)
 
 if __name__ == "__main__":
     main()
